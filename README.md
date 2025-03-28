@@ -1,0 +1,1 @@
+Playing around with algorithms to detrend Kepler data.
