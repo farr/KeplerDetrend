@@ -6,11 +6,11 @@ using HDF5
 using FITSIO
 using KeplerDetrend
 using Printf
-using ProgressMeter
+using ProgressLogging
 
 qtrs = 1:17
 
-@showprogress for q in qtrs
+@progress for q in qtrs
     fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
     dfs = []
     for f in readdir(fitsdir)

@@ -1,27 +1,29 @@
 using Pkg
-Pkg.activate("..")
+Pkg.activate(joinpath(@__DIR__, ".."))
 
 using DataFrames
 using FITSIO
 using HDF5
 using KeplerDetrend
-using ProgressMeter
+using Printf
+using ProgressLogging
+using Statistics
 
-cbv_var_threshold = 100.0
+cbv_var_threshold = 10.0
 
 qtrs = 1:17
 
-@showprogress desc="Quarters" for q in qtrs
+@progress name="Quarters" for q in qtrs
     basis, svs = h5open(joinpath(@__DIR__, "..", "lc-files", "HLSP", "CBV", @sprintf("Q%02d.h5", q)), "r") do file
         read(file, "basis"), read(file, "singular_values")
     end
 
-    nc = findfirst(svs .< svs[1] / cbv_var_threshold)
+    nc = findfirst(svs .< cbv_var_threshold * median(svs))
     M = full_detrend_basis_to_detrend_design_matrix(basis, nc)
 
     fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
 
-    @showprogress desc="Files" for f in readdir(fitsdir)
+    @progress name="Files" for f in readdir(fitsdir)
         if endswith(f, ".fits")
             FITS(joinpath(fitsdir, f), "r") do file
                 lc = DataFrame(file[2])
