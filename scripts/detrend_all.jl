@@ -1,0 +1,69 @@
+using Pkg
+Pkg.activate("..")
+
+using DataFrames
+using FITSIO
+using HDF5
+using KeplerDetrend
+using ProgressMeter
+
+cbv_var_threshold = 100.0
+
+qtrs = 1:17
+
+@showprogress desc="Quarters" for q in qtrs
+    basis, svs = h5open(joinpath(@__DIR__, "..", "lc-files", "HLSP", "CBV", @sprintf("Q%02d.h5", q)), "r") do file
+        read(file, "basis"), read(file, "singular_values")
+    end
+
+    nc = findfirst(svs .< svs[1] / cbv_var_threshold)
+    M = full_detrend_basis_to_detrend_design_matrix(basis, nc)
+
+    fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
+
+    @showprogress desc="Files" for f in readdir(fitsdir)
+        if endswith(f, ".fits")
+            FITS(joinpath(fitsdir, f), "r") do file
+                lc = DataFrame(file[2])
+                lc[!, :FLUX_ERR_EST] .= difference_white_noise_estimate(lc[!, :FLUX])
+
+                detrend!(lc, M)
+
+                fbase, fext = splitext(f)
+
+                outfile = fbase * "_detrended" * fext
+
+                FITS(joinpath(fitsdir, outfile), "w") do outf
+                    header1 = read_header(file[1])
+                    header1["NCBV"] = nc
+                    set_comment!(header1, "NCBV", "Number of CBVs used to detrend")
+                    header1["CBVVARTH"] = cbv_var_threshold
+                    set_comment!(header1, "CBVVARTH", "CBV variance threshold")
+
+                    write(outf, zeros(1,1), header=header1)
+
+                    header2 = read_header(file[2])
+                    header2["NAXIS2"] = 8*5
+                    header2["TFIELDS"] = 5
+
+                    header2["TTYPE4"] = "FLUX_DETREND"
+                    header2["TFORM4"] = "D"
+                    header2["TUNIT4"] = "e-/s"
+                    set_comment!(header2, "TTYPE4", "Detrended flux")
+                    set_comment!(header2, "TUNIT4", "column units: electrons per second")
+
+                    header2["TTYPE5"] = "FLUX_DETREND_ERR_EST"
+                    header2["TFORM5"] = "D"
+                    header2["TUNIT5"] = "e-/s"
+                    set_comment!(header2, "TTYPE5", "Detrended flux error estimate")
+                    set_comment!(header2, "TUNIT5", "column units: electrons per second")
+
+                    write(outf, 
+                    ["CADENCE", "TIME", "FLUX", "FLUX_DETREND", "FLUX_DETREND_ERR_EST"],
+                    [lc[!, :CADENCE], lc[!, :TIME], lc[!, :FLUX], lc[!, :FLUX_DETREND], lc[!, :FLUX_ERR_EST]],
+                    header=header2)
+                end
+            end
+        end
+    end
+end
