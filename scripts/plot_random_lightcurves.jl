@@ -1,5 +1,5 @@
 using Pkg
-Pkg.activate("..")
+Pkg.activate(joinpath(@__DIR__, ".."))
 
 using CairoMakie
 using DataFrames
@@ -25,6 +25,9 @@ function plot_random_lightcurve(; qtrs = 1:17, rescale_lc = true)
         flux = lc[!, :FLUX_DETREND]
         flux_err = lc[!, :FLUX_DETREND_ERR_EST]
     end
+
+    std_flux = std(flux)
+
     fig = Figure()
     a = Axis(fig[1, 1], title=f, xlabel=L"t / \mathrm{d}", ylabel=L"f / \mathrm{e}^- \, \mathrm{s}^{-1}")
     errorbars!(a, lc[!, :TIME], flux, flux_err)

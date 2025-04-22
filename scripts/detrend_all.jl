@@ -1,6 +1,11 @@
 using Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))
 
+using Logging: global_logger
+using TerminalLoggers: TerminalLogger
+global_logger(TerminalLogger())
+
+
 using DataFrames
 using FITSIO
 using HDF5
@@ -10,6 +15,7 @@ using ProgressLogging
 using Statistics
 
 cbv_var_threshold = 10.0
+n_cbvs = 5
 
 qtrs = 1:17
 
@@ -18,7 +24,8 @@ qtrs = 1:17
         read(file, "basis"), read(file, "singular_values")
     end
 
-    nc = findfirst(svs .< cbv_var_threshold * median(svs))
+    # nc = findfirst(svs .< cbv_var_threshold * median(svs))
+    nc = n_cbvs
     M = full_detrend_basis_to_detrend_design_matrix(basis, nc)
 
     fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
