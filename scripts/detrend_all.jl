@@ -5,7 +5,7 @@ using Logging: global_logger
 using TerminalLoggers: TerminalLogger
 global_logger(TerminalLogger())
 
-
+using ArgParse
 using DataFrames
 using FITSIO
 using HDF5
@@ -14,8 +14,22 @@ using Printf
 using ProgressLogging
 using Statistics
 
-cbv_var_threshold = 10.0
-n_cbvs = 5
+s = ArgParseSettings()
+@add_arg_table s begin
+    "--cbv_var_threshold"
+        arg_type = Float64
+        default = 10.0
+        help = "include CBVs up to singular value `threshold*median(singular_values)`"
+    "--n_cbvs"
+        arg_type = Int
+        default = 0
+        help = "number of CBVs to use for detrending (<= 0 means use var threshold)"
+end
+
+parsed_args = parse_args(s)
+
+cbv_var_threshold = parsed_args[:cbv_var_threshold] 
+n_cbvs = parsed_args[:n_cbvs]
 
 qtrs = 1:17
 
@@ -24,8 +38,12 @@ qtrs = 1:17
         read(file, "basis"), read(file, "singular_values")
     end
 
-    # nc = findfirst(svs .< cbv_var_threshold * median(svs))
-    nc = n_cbvs
+    if n_cbvs <= 0 
+        nc = findfirst(svs .< cbv_var_threshold * median(svs))
+    else
+        nc = n_cbvs
+    end
+    
     M = full_detrend_basis_to_detrend_design_matrix(basis, nc)
 
     fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
