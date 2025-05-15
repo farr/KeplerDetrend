@@ -16,10 +16,10 @@ using Statistics
 
 s = ArgParseSettings()
 @add_arg_table s begin
-    "--cbv_var_threshold"
+    "--cbv_chi2_threshold"
         arg_type = Float64
-        default = 10.0
-        help = "include CBVs up to singular value `threshold*median(singular_values)`"
+        default = 2.0
+        help = "include CBVs until the median delta_chi2 is less than this value"
     "--n_cbvs"
         arg_type = Int
         default = 0
@@ -28,8 +28,8 @@ end
 
 parsed_args = parse_args(s)
 
-cbv_var_threshold = parsed_args[:cbv_var_threshold] 
-n_cbvs = parsed_args[:n_cbvs]
+cbv_chi2_threshold = parsed_args["cbv_chi2_threshold"] 
+n_cbvs = parsed_args["n_cbvs"]
 
 qtrs = 1:17
 
@@ -38,13 +38,27 @@ qtrs = 1:17
         read(file, "basis"), read(file, "singular_values")
     end
 
+
     if n_cbvs <= 0 
-        nc = findfirst(svs .< cbv_var_threshold * median(svs))
+        fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
+        dfs = []
+        @progress name="Load Files" for f in readdir(fitsdir)
+            if endswith(f, ".fits")
+                FITS(joinpath(fitsdir, f), "r") do file
+                    df = DataFrame(file[2])
+                    df[!, :FLUX_ERR_EST] .= difference_white_noise_estimate(df[!, :FLUX])
+    
+                    push!(dfs, df)
+                end
+            end
+        end
+        nc = num_cbvs_chi2_threshold(basis, dfs, threshold=cbv_chi2_threshold)
     else
         nc = n_cbvs
     end
     
     M = full_detrend_basis_to_detrend_design_matrix(basis, nc)
+    @info "Using $nc CBVs for detrending Q$(q)"
 
     fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
 
@@ -64,8 +78,6 @@ qtrs = 1:17
                     header1 = read_header(file[1])
                     header1["NCBV"] = nc
                     set_comment!(header1, "NCBV", "Number of CBVs used to detrend")
-                    header1["CBVVARTH"] = cbv_var_threshold
-                    set_comment!(header1, "CBVVARTH", "CBV variance threshold")
 
                     write(outf, zeros(1,1), header=header1)
 

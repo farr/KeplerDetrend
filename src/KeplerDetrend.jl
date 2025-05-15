@@ -4,7 +4,7 @@ using DataFrames
 using LinearAlgebra
 using Statistics
 
-export difference_white_noise_estimate, full_detrend_basis_to_detrend_design_matrix, full_detrend_basis_and_singular_values, detrend!
+export difference_white_noise_estimate, full_detrend_basis_to_detrend_design_matrix, full_detrend_basis_and_singular_values, detrend!, num_cbvs_chi2_threshold
 
 @doc raw"""
     difference_white_noise_estimate(flux)
@@ -75,6 +75,26 @@ function detrend!(df, basis; flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_E
     df[!, flux_col_name * "_DETREND"] = df[!, flux_col_name] - basis[:, 2:end] * x[2:end] # Subtract everything but the mean 
     df[!, flux_col_name * "_DETREND_NORM"] = df[!, flux_col_name * "_DETREND"] ./ (basis[:, 1] .* x[1]) # Normalize by the mean
     df[!, flux_col_name * "_DETREND_NORM_ERR_EST"] = df[!, flux_err_col_name] ./ (basis[:, 1] .* x[1]) # Normalize by the mean
+end
+
+@doc raw"""
+    num_cbvs_chi2_threshold(U, dfs; threshold=2.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
+
+Returns the number of CBVs to use for detrending based on the median delta-chi2
+over stars.
+
+Finds the first `n` where the median delta-chi2 from subtracting the `n+1`th CBV
+is smaller than `threshold`.
+"""
+function num_cbvs_chi2_threshold(U, dfs; threshold=2.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
+    for j in axes(U, 2)
+        vhat = U[:,j]
+        delta_chi2s = [(vhat' * df[!, flux_col_name] / df[1, flux_err_col_name]) .^ 2 for df in dfs]
+        if median(delta_chi2s) < threshold
+            return j - 1 # The first j where the median delta-chi2 is less than threshold
+        end
+    end
+    return size(U, 2)
 end
 
 end # module KeplerDetrend
