@@ -16,10 +16,10 @@ using Statistics
 
 s = ArgParseSettings()
 @add_arg_table s begin
-    "--cbv_chi2_threshold"
+    "--cbv_threshold"
         arg_type = Float64
-        default = 2.0
-        help = "include CBVs until the median delta_chi2 is less than this value"
+        default = 5.0
+        help = "include CBVs until the median basis coefficient significance is below this threshold (in sigma)"
     "--n_cbvs"
         arg_type = Int
         default = 0

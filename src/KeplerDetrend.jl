@@ -83,14 +83,13 @@ end
 Returns the number of CBVs to use for detrending based on the median delta-chi2
 over stars.
 
-Finds the first `n` where the median delta-chi2 from subtracting the `n+1`th CBV
-is smaller than `threshold`.
+Finds the first `n` where the median basis vector coefficient is below `threshold` sigma in significance.
 """
-function num_cbvs_chi2_threshold(U, dfs; threshold=2.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
+function num_cbvs_chi2_threshold(U, dfs; threshold=5.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
     for j in axes(U, 2)
         vhat = U[:,j]
-        delta_chi2s = [(vhat' * df[!, flux_col_name] / df[1, flux_err_col_name]) .^ 2 for df in dfs]
-        if median(delta_chi2s) < threshold
+        standardized_coefficients = [(vhat' * df[!, flux_col_name] / df[1, flux_err_col_name]) for df in dfs]
+        if median(abs.(standardized_coefficients)) < threshold
             return j - 1 # The first j where the median delta-chi2 is less than threshold
         end
     end
