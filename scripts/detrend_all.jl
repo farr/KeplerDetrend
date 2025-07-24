@@ -28,7 +28,7 @@ end
 
 parsed_args = parse_args(s)
 
-cbv_chi2_threshold = parsed_args["cbv_chi2_threshold"] 
+cbv_threshold = parsed_args["cbv_threshold"] 
 n_cbvs = parsed_args["n_cbvs"]
 
 qtrs = 1:17
@@ -52,7 +52,7 @@ qtrs = 1:17
                 end
             end
         end
-        nc = num_cbvs_chi2_threshold(basis, dfs, threshold=cbv_chi2_threshold)
+        nc = num_cbvs_threshold(basis, dfs, threshold=cbv_threshold)
     else
         nc = n_cbvs
     end

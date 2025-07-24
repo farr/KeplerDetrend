@@ -4,7 +4,7 @@ using DataFrames
 using LinearAlgebra
 using Statistics
 
-export difference_white_noise_estimate, full_detrend_basis_to_detrend_design_matrix, full_detrend_basis_and_singular_values, detrend!, num_cbvs_chi2_threshold
+export difference_white_noise_estimate, full_detrend_basis_to_detrend_design_matrix, full_detrend_basis_and_singular_values, detrend!, num_cbvs_threshold
 
 @doc raw"""
     difference_white_noise_estimate(flux)
@@ -85,7 +85,7 @@ over stars.
 
 Finds the first `n` where the median basis vector coefficient is below `threshold` sigma in significance.
 """
-function num_cbvs_chi2_threshold(U, dfs; threshold=5.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
+function num_cbvs_threshold(U, dfs; threshold=5.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
     for j in axes(U, 2)
         vhat = U[:,j]
         standardized_coefficients = [(vhat' * df[!, flux_col_name] / df[1, flux_err_col_name]) for df in dfs]
