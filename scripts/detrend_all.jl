@@ -77,7 +77,7 @@ qtrs = 1:17
 
     # Ensure we have an output directory
     mkpath(outdir)
-e
+
     @progress name="Files" for f in readdir(fitsdir)
         if endswith(f, ".fits")
             FITS(joinpath(fitsdir, f), "r") do file
