@@ -78,12 +78,13 @@ function detrend!(df, basis; flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_E
 end
 
 @doc raw"""
-    num_cbvs_chi2_threshold(U, dfs; threshold=2.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
+    num_cbvs_threshold(U, dfs; threshold=5.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
 
-Returns the number of CBVs to use for detrending based on the median delta-chi2
-over stars.
+Returns the number of CBVs to use for detrending based on the median
+significance (in sigma) of the basis vector coefficients.
 
-Finds the first `n` where the median basis vector coefficient is below `threshold` sigma in significance.
+Finds the first `n` where the median basis vector coefficient is below
+`threshold` sigma in significance.
 """
 function num_cbvs_threshold(U, dfs; threshold=5.0, flux_col_name="FLUX", flux_err_col_name="FLUX_ERR_EST")
     for j in axes(U, 2)

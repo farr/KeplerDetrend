@@ -24,6 +24,18 @@ s = ArgParseSettings()
         arg_type = Int
         default = 0
         help = "number of CBVs to use for detrending (<= 0 means use var threshold)"
+    "--cbvdir"
+        arg_type = String
+        default = joinpath(@__DIR__, "..", "lc-files", "HLSP", "CBV")
+        help = "directory containing the CBV basis files by quarter"
+    "--lcdir"
+        arg_type = String
+        default = joinpath(@__DIR__, "..", "lc-files", "HLSP")
+        help = "directory containing the lightcurves to detrend by quarter"
+    "--outdir"
+        arg_type = String
+        default = joinpath(@__DIR__, "..", "lc-files", "HLSP", "detrended")
+        help = "output directory for detrended lightcurves; will be stored in <outdir>/QNN/filename_detrended.fits"
 end
 
 parsed_args = parse_args(s)
@@ -34,13 +46,13 @@ n_cbvs = parsed_args["n_cbvs"]
 qtrs = 1:17
 
 @progress name="Quarters" for q in qtrs
-    basis, svs = h5open(joinpath(@__DIR__, "..", "lc-files", "HLSP", "CBV", @sprintf("Q%02d.h5", q)), "r") do file
+    basis, svs = h5open(joinpath(parsed_args["cbvdir"], @sprintf("Q%02d.h5", q)), "r") do file
         read(file, "basis"), read(file, "singular_values")
     end
 
 
     if n_cbvs <= 0 
-        fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
+        fitsdir = joinpath(parsed_args["lcdir"], @sprintf("Q%02d", q))
         dfs = []
         @progress name="Load Files" for f in readdir(fitsdir)
             if endswith(f, ".fits")
@@ -60,8 +72,12 @@ qtrs = 1:17
     M = full_detrend_basis_to_detrend_design_matrix(basis, nc)
     @info "Using $nc CBVs for detrending Q$(q)"
 
-    fitsdir = joinpath(@__DIR__, "..", "lc-files", "HLSP", @sprintf("Q%02d", q))
+    fitsdir = joinpath(parsed_args["lcdir"], @sprintf("Q%02d", q))
+    outdir = joinpath(parsed_args["outdir"], @sprintf("Q%02d", q))
 
+    # Ensure we have an output directory
+    mkpath(outdir)
+e
     @progress name="Files" for f in readdir(fitsdir)
         if endswith(f, ".fits")
             FITS(joinpath(fitsdir, f), "r") do file
@@ -74,7 +90,7 @@ qtrs = 1:17
 
                 outfile = fbase * "_detrended" * fext
 
-                FITS(joinpath(fitsdir, outfile), "w") do outf
+                FITS(joinpath(outdir, outfile), "w") do outf
                     header1 = read_header(file[1])
                     header1["NCBV"] = nc
                     set_comment!(header1, "NCBV", "Number of CBVs used to detrend")
