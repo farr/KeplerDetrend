@@ -1,13 +1,14 @@
 name = "KeplerDetrend"
 uuid = "fe00f1c2-ad02-40f6-8397-23707ce87a00"
-authors = ["Will M. Farr <will.farr@ligo.org>"]
 version = "0.1.0"
+authors = ["Will M. Farr <will.farr@ligo.org>"]
 
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 FITSIO = "525bcba6-941b-5504-bd06-fd0dc1a4d2eb"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -19,9 +20,10 @@ TerminalLoggers = "5d786b92-1e48-4d6f-9151-6b4477ca9bed"
 
 [compat]
 ArgParse = "1.2.0"
-CairoMakie = "0.13.2"
+CairoMakie = "0.15.11"
 DataFrames = "1.7.0"
 FITSIO = "0.17.4"
+Glob = "1.5.0"
 HDF5 = "0.17.2"
 LaTeXStrings = "1.4.0"
 LinearAlgebra = "1.11.0"
@@ -30,3 +32,4 @@ Printf = "1.11.0"
 ProgressLogging = "0.1.4"
 Statistics = "1.11.1"
 TerminalLoggers = "0.1.7"
+julia = "1.12"
